@@ -41,6 +41,12 @@ namespace BooksStoreApp.Models.Repositories
             return authors;
         }
 
+        public List<Author> Search(string str)
+        {
+            var res = authors.Where(a => a.FullName.Contains(str));
+            return res.ToList();
+        }
+
         public void Update(int id, Author newEntity)
         {
             var author = Find(id);

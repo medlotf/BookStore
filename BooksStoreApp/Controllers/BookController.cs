@@ -58,14 +58,7 @@ namespace BooksStoreApp.Controllers
             {
                 try
                 {
-                    string fileName = string.Empty;
-                    if(model.Img != null)
-                    {
-                        string uploads = Path.Combine(hosting.WebRootPath, "uploads");
-                        fileName = model.Img.FileName;
-                        string fullPath = Path.Combine(uploads, fileName);
-                        model.Img.CopyTo(new FileStream(fullPath, FileMode.Create));
-                    }
+                    string fileName = UploadsFile(model.Img)??string.Empty;
 
                     if (model.AuthorId == -1)
                     { 
@@ -118,27 +111,11 @@ namespace BooksStoreApp.Controllers
         {
             try
             {
-                string fileName = string.Empty;
-                if (model.Img != null)
-                {
-                    string uploads = Path.Combine(hosting.WebRootPath, "uploads");
-                    fileName = model.Img.FileName;
-                    string fullPath = Path.Combine(uploads, fileName);
-
-                    //Delete the old file
-                    string oldFileName = bookRepository.Find(model.Id).ImageUrl;
-                    string fullOldPath = Path.Combine(uploads, oldFileName);
-
-                    if(fullPath != fullOldPath)
-                    {
-                        System.IO.File.Delete(fullOldPath);
-                        //save the new file
-                        model.Img.CopyTo(new FileStream(fullPath, FileMode.Create));
-                    }                    
-                }
+                string fileName = UploadFile(model.Img,model.ImgUrl);
 
                 Book book = new Book
                 {
+                    Id=model.Id,
                     Title = model.Title,
                     Description = model.Description,
                     Author = authorRepository.Find(model.AuthorId),
@@ -194,5 +171,42 @@ namespace BooksStoreApp.Controllers
             return Vmodel;
         }
 
+        string UploadsFile(IFormFile file)
+        {
+            if (file != null)
+            {
+                string uploads = Path.Combine(hosting.WebRootPath, "uploads");
+                string fullPath = Path.Combine(uploads, file.FileName);
+                file.CopyTo(new FileStream(fullPath, FileMode.Create));
+
+                return file.FileName;
+            }
+            return null;
+        }
+
+        string UploadFile(IFormFile file,string ImgUrl)
+        {
+            if (file != null)
+            {
+                string uploads = Path.Combine(hosting.WebRootPath, "uploads");
+
+                string newPath = Path.Combine(uploads, file.FileName);
+                string oldPath = Path.Combine(uploads, ImgUrl);
+
+                if (newPath != oldPath)
+                {
+                    System.IO.File.Delete(oldPath);
+                    file.CopyTo(new FileStream(newPath, FileMode.Create));
+                }
+                return file.FileName;
+            }
+            return ImgUrl;
+        }
+
+        public ActionResult Search(string str)
+        {
+            var res = bookRepository.Search(str);
+            return View("Index", res);
+        }
     }
 }
